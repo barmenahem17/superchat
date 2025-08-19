@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { formatIls, formatUsd } from '@/lib/format'
+import { RefreshButton } from './refresh-button'
 
 interface AccountSummary {
   account: { id: string; name: string }
@@ -47,12 +49,7 @@ async function getAccountSummary(id: string): Promise<AccountSummary | null> {
   }
 }
 
-function formatCurrency(amount: number, currency: string = '₪', decimals: number = 2): string {
-  return `${currency}${amount.toLocaleString('he-IL', { 
-    minimumFractionDigits: decimals, 
-    maximumFractionDigits: decimals 
-  })}`
-}
+
 
 export default async function AccountDetailPage({ params }: { params: { id: string } }) {
   const summary = await getAccountSummary(params.id)
@@ -73,57 +70,69 @@ export default async function AccountDetailPage({ params }: { params: { id: stri
   const totalCashILS = summary.cash.ILS + (summary.cash.USD * summary.fxNow)
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-6">
-        <Link href="/accounts" className="text-blue-600 hover:underline mb-4 inline-block">
-          ← חזרה לרשימת חשבונות
-        </Link>
-        <h1 className="text-3xl font-bold">{summary.account.name}</h1>
+    <div className="container mx-auto py-8 px-4" dir="rtl">
+      <div className="mb-8">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <Link href="/accounts" className="text-blue-600 hover:underline mb-4 inline-block">
+              ← חזרה לרשימת חשבונות
+            </Link>
+            <h1 className="text-4xl font-bold mb-2">{summary.account.name}</h1>
+            <p className="text-sm text-gray-500">
+              עודכן לאחרונה: —
+            </p>
+          </div>
+          <RefreshButton />
+        </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
         {/* Total Value */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">שווי כולל</h2>
-          <p className="text-2xl font-bold text-green-600">
-            {formatCurrency(summary.totals.totalValueILS)}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm min-h-[120px] flex flex-col">
+          <h2 className="text-xl font-semibold text-gray-900 mb-3">שווי כולל</h2>
+          <p className="text-3xl font-bold text-green-600 mt-auto">
+            {formatIls(summary.totals.totalValueILS)}
           </p>
         </div>
 
         {/* Cash */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">מזומן</h2>
-          <p className="text-sm text-gray-600">
-            {formatCurrency(summary.cash.ILS)} + ${summary.cash.USD.toFixed(2)}
-          </p>
-          <p className="text-lg font-bold">
-            סה״כ {formatCurrency(totalCashILS)}
-          </p>
+        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm min-h-[120px] flex flex-col">
+          <h2 className="text-xl font-semibold text-gray-900 mb-3">מזומן</h2>
+          <div className="mt-auto">
+            <p className="text-sm text-gray-600 mb-1">
+              {formatIls(summary.cash.ILS)} + {formatUsd(summary.cash.USD)}
+            </p>
+            <p className="text-xl font-bold">
+              סה״כ {formatIls(totalCashILS)}
+            </p>
+          </div>
         </div>
 
         {/* Performance */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">ביצועים</h2>
-          <p className="text-lg font-bold mb-2">
-            {formatCurrency(summary.holdings.totalUSD * summary.fxNow)}
-          </p>
-          <details className="text-sm">
-            <summary className="cursor-pointer text-blue-600 hover:underline">
-              עוד פירוט
-            </summary>
-            <div className="mt-2 space-y-1">
-              <p>ממומש: {formatCurrency(summary.holdings.realizedUSD * summary.fxNow)}</p>
-              <p>לא ממומש: {formatCurrency(summary.holdings.unrealizedUSD * summary.fxNow)}</p>
-            </div>
-          </details>
+        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm min-h-[120px] flex flex-col">
+          <h2 className="text-xl font-semibold text-gray-900 mb-3">ביצועים</h2>
+          <div className="mt-auto">
+            <p className="text-xl font-bold mb-2">
+              {formatIls(summary.holdings.totalUSD * summary.fxNow)}
+            </p>
+            <details className="text-sm">
+              <summary className="cursor-pointer text-blue-600 hover:underline">
+                עוד פירוט
+              </summary>
+              <div className="mt-2 space-y-1">
+                <p>ממומש: {formatIls(summary.holdings.realizedUSD * summary.fxNow)}</p>
+                <p>לא ממומש: {formatIls(summary.holdings.unrealizedUSD * summary.fxNow)}</p>
+              </div>
+            </details>
+          </div>
         </div>
 
         {/* FX Impact */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">רווח מהמרות</h2>
-          <p className={`text-lg font-bold ${summary.fxImpactILS >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {formatCurrency(summary.fxImpactILS)}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm min-h-[120px] flex flex-col">
+          <h2 className="text-xl font-semibold text-gray-900 mb-3">רווח מהמרות</h2>
+          <p className={`text-xl font-bold mt-auto ${summary.fxImpactILS >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {formatIls(summary.fxImpactILS)}
           </p>
         </div>
       </div>
@@ -165,15 +174,15 @@ export default async function AccountDetailPage({ params }: { params: { id: stri
                       {instrument.qtyHeld.toFixed(6)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${instrument.currentPriceUSD.toFixed(2)}
+                      {formatUsd(instrument.currentPriceUSD)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${instrument.valueUSD.toFixed(2)}
+                      {formatUsd(instrument.valueUSD)}
                     </td>
                     <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
                       instrument.totalUSD >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      ${instrument.totalUSD.toFixed(2)}
+                      {formatUsd(instrument.totalUSD)}
                     </td>
                   </tr>
                 ))}
