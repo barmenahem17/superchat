@@ -11,7 +11,74 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum AssetType {
+  equity
+  etf
+  crypto
+}
+
+enum TradeSide {
+  BUY
+  SELL
+}
+
+enum Currency {
+  USD
+  ILS
+}
+
 model Account {
-  id   String @id @default(cuid())
-  name String @unique
+  id            String         @id @default(cuid())
+  name          String         @unique
+  instruments   Instrument[]
+  cashMoves     CashMove[]
+  fxConversions FxConversion[]
+  createdAt     DateTime       @default(now())
+}
+
+model Instrument {
+  id            String    @id @default(cuid())
+  accountId     String
+  account       Account   @relation(fields: [accountId], references: [id])
+  symbol        String
+  assetType     AssetType
+  quoteCurrency Currency
+  trades        Trade[]
+  createdAt     DateTime  @default(now())
+
+  @@unique([accountId, symbol])
+}
+
+model Trade {
+  id           String     @id @default(cuid())
+  instrumentId String
+  instrument   Instrument @relation(fields: [instrumentId], references: [id])
+  side         TradeSide
+  qty          Decimal
+  price        Decimal
+  fee          Decimal    @default(0)
+  date         DateTime
+}
+
+model CashMove {
+  id        String   @id @default(cuid())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id])
+  type      String
+  amount    Decimal
+  currency  Currency
+  date      DateTime
+}
+
+model FxConversion {
+  id           String   @id @default(cuid())
+  accountId    String
+  account      Account  @relation(fields: [accountId], references: [id])
+  fromCurrency Currency
+  fromAmount   Decimal
+  toCurrency   Currency
+  toAmount     Decimal
+  rate         Decimal
+  fee          Decimal  @default(0)
+  date         DateTime
 }
