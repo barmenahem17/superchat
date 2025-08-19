@@ -25,6 +25,8 @@ interface AccountSummary {
     unrealizedUSD: number
     totalUSD: number
     valueUSD: number
+    isLivePrice?: boolean
+    priceReason?: string
   }>
 }
 
@@ -110,11 +112,12 @@ async function getPriceSnapshots(accountId: string): Promise<Record<string, { pr
 
 
 
-export default async function AccountDetailPage({ params }: { params: { id: string } }) {
+export default async function AccountDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const [summary, lastUpdate, priceSnapshots] = await Promise.all([
-    getAccountSummary(params.id),
-    getLastPriceUpdate(params.id),
-    getPriceSnapshots(params.id)
+    getAccountSummary(id),
+    getLastPriceUpdate(id),
+    getPriceSnapshots(id)
   ])
 
   if (!summary) {
@@ -145,7 +148,7 @@ export default async function AccountDetailPage({ params }: { params: { id: stri
               עודכן לאחרונה: {lastUpdate || '—'}
             </p>
           </div>
-          <RefreshButton accountId={params.id} />
+          <RefreshButton accountId={id} />
         </div>
       </div>
 
@@ -246,7 +249,14 @@ export default async function AccountDetailPage({ params }: { params: { id: stri
                         {instrument.qtyHeld.toFixed(6)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatUsd(instrument.currentPriceUSD)}
+                        <div>
+                          {formatUsd(instrument.currentPriceUSD)}
+                          {!instrument.isLivePrice && (
+                            <div className="text-xs text-orange-500 mt-1">
+                              (מחיר זמני)
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatUsd(instrument.valueUSD)}

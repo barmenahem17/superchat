@@ -15,6 +15,7 @@ SuperChat הוא מנהל תיקי השקעות המנהל 3 תיקים עיקר
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **Database**: Prisma ORM + SQLite
 - **Testing**: Vitest + Testing Library
+- **Live Data**: Alpha Vantage (stocks) + CoinGecko (crypto) + ExchangeRate-API (FX)
 - **Deployment**: Ready for Vercel/Netlify
 
 ## כללי חישוב מרכזיים
@@ -42,6 +43,37 @@ SuperChat הוא מנהל תיקי השקעות המנהל 3 תיקים עיקר
 ### תקופות
 - תמיכה בתקופות זמן שונות: יומי, שבועי, חודשי, שנתי
 - חישוב ביצועים מצטברים לכל תקופה
+
+## Live Prices
+
+האפליקציה משתמשת בשלושה מקורות מידע לקבלת מחירים עדכניים:
+
+### מקורות נתונים
+- **מניות**: [Alpha Vantage API](https://www.alphavantage.co/) - מחירים בזמן אמת למניות אמריקאיות
+- **קריפטו**: [CoinGecko API](https://www.coingecko.com/api) - מחירי מטבעות דיגיטליים
+- **מטבעות**: [ExchangeRate-API](https://exchangerate.host/) - שערי חליפין USD/ILS
+
+### דרישות סביבה
+```bash
+ALPHA_VANTAGE_KEY=your_api_key_here  # נדרש למחירי מניות
+```
+
+### התנהגות
+- בלי מפתח API: האפליקציה תשתמש במחירים דמו עם סימון "(מחיר זמני)"
+- עם מפתח API: מחירים חיים מהמקורות החיצוניים
+- כפתור "עדכן נתונים" טוען מחירים חדשים ומרענן את הדף
+
+### בדיקת מחירים
+```bash
+# בדיקת מחיר מניה
+curl "http://localhost:3000/api/price?symbol=MSFT"
+
+# בדיקת מחיר קריפטו  
+curl "http://localhost:3000/api/price?coin=bitcoin"
+
+# בדיקת שער חליפין
+curl "http://localhost:3000/api/price?fx=USDILS"
+```
 
 ## מבנה תיקיות
 

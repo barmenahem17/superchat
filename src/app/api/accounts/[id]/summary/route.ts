@@ -3,16 +3,17 @@ import { PrismaClient } from '@/generated/prisma'
 import { calcPnlForInstrument } from '@/domain/calc'
 import { calcFxImpactIls } from '@/domain/fx'
 import { getCurrentPriceUSD } from '@/lib/currentPrices'
+import { getUsdIlsRate } from '@/lib/marketData'
 import type { TradeLike, FxConversionLike } from '@/domain/types'
 
 const prisma = new PrismaClient()
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const accountId = params.id
+    const { id: accountId } = await params
     
     // Fetch account with all related data
     const account = await prisma.account.findUnique({
@@ -32,7 +33,9 @@ export async function GET(
       return NextResponse.json({ error: 'Account not found' }, { status: 404 })
     }
 
-    const fxNow = parseFloat(process.env.FX_NOW || '3.70')
+    // Try to get live FX rate, fallback to env var
+    const liveFxRate = await getUsdIlsRate()
+    const fxNow = liveFxRate ?? parseFloat(process.env.FX_NOW || '3.70')
 
     // Calculate cash balances
     let cashUSD = 0
@@ -83,7 +86,8 @@ export async function GET(
     const instruments = []
 
     for (const instrument of account.instruments) {
-      const currentPriceUSD = getCurrentPriceUSD(instrument.symbol)
+      const priceResult = await getCurrentPriceUSD(instrument.symbol)
+      const currentPriceUSD = priceResult.price
       
       const trades: TradeLike[] = instrument.trades.map(trade => ({
         side: trade.side as "BUY" | "SELL",
@@ -108,7 +112,9 @@ export async function GET(
         realizedUSD: pnl.realizedUSD,
         unrealizedUSD: pnl.unrealizedUSD,
         totalUSD: pnl.totalUSD,
-        valueUSD
+        valueUSD,
+        isLivePrice: priceResult.isLive,
+        priceReason: priceResult.reason
       })
     }
 
