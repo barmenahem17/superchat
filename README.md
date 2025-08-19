@@ -1,34 +1,109 @@
-# superchat – Personal Portfolio Manager (v1)
+# SuperChat - מנהל תיקי השקעות
 
-מנהל השקעות אישי ל-3 תיקים (Extrade, IBKR, Kraken) עם פירוק ביצועים:
-- רווח/הפסד שוק
-- רווח/הפסד מהמרות דולר/שקל
-- הפרדה ברורה בין "ביצועים" לבין "שווי"
+## מה האפליקציה עושה
 
-## Stack (Phase A)
-- Next.js (App Router, TypeScript)
-- Tailwind CSS + shadcn/ui
-- Prisma + SQLite (שלב ראשון, מעבר בהמשך ל-Supabase/Neon)
-- Vitest (בדיקות לחישוב)
+SuperChat הוא מנהל תיקי השקעות המנהל 3 תיקים עיקריים:
+- **Extrade** - תיק ישראלי
+- **IBKR** (Interactive Brokers) - תיק בינלאומי
+- **Kraken** - תיק קריפטו
 
-## Core rules
-- עמלות: קבועות לפעולה; נגרעות רק כשהפעולה בוצעה.
-- מכירה חלקית: ממומש לחלק שנמכר + פוטנציאלי ליתרה.
-- מטבע ראשי (ILS/USD): משפיע על תצוגה בלבד; מזומן מוצג גם מקורי וגם כהמרה.
-- השפעת דולר/שקל: רק מהמרות שבוצעו (FxConversion).
-- "ביצועים" = שוק + המרות (ללא הפקדות/משיכות); "שווי" = הכל כולל הפקדות.
-- "מתחילת שנה" = 1 בינואר; "מהעסקה הראשונה" = מהתאריך הראשון בתיק.
+האפליקציה מספקת מעקב מרוכז אחר כל התיקים עם חישובי ביצועים מתקדמים.
 
-## Project layout
-- `src/app/` – עמודים ו-API
-- `src/domain/` – פונקציות חישוב טהורות (עם טסטים)
-- `src/data/` – Prisma client ושכבת נתונים
-- `src/services/` – שירותי מחירים ושערים (בהמשך)
-- `prisma/` – schema + seed
-- `tests/` – Vitest
+## Tech Stack
+
+- **Frontend**: Next.js 15 + TypeScript + App Router
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **Database**: Prisma ORM + SQLite
+- **Testing**: Vitest + Testing Library
+- **Deployment**: Ready for Vercel/Netlify
+
+## כללי חישוב מרכזיים
+
+### עמלות לפעולה
+- כל פעולת קנייה/מכירה כוללת עמלה שמשפיעה על החישוב
+- העמלות נלקחות בחשבון בחישוב הרווח/הפסד הנקי
+
+### מכירה חלקית
+- תמיכה במכירות חלקיות של עמדות
+- חישוב ממוצע משוקלל לעמלות וריווחים
+
+### מטבע ראשי לתצוגה
+- כל הנתונים מוצגים במטבע הראשי (שקל/דולר) לצורך השוואה
+- המרות מטבע מתבצעות לפי שער יומי
+
+### השפעת דולר/שקל
+- שער הדולר משפיע רק על המרות בין מטבעות
+- לא משפיע על ביצועי נכסים במטבע המקורי
+
+### "ביצועים" מול "שווי"
+- **ביצועים**: רווח/הפסד יחסי באחוזים
+- **שווי**: ערך כספי מוחלט של התיק
+
+### תקופות
+- תמיכה בתקופות זמן שונות: יומי, שבועי, חודשי, שנתי
+- חישוב ביצועים מצטברים לכל תקופה
+
+## מבנה תיקיות
+
+```
+superchat/
+├── src/
+│   ├── app/                 # Next.js App Router
+│   ├── components/          # React components
+│   ├── lib/                 # Utilities (shadcn)
+│   ├── domain/              # Business logic & entities
+│   ├── data/                # Data access & repositories
+│   └── services/            # External integrations
+├── prisma/                  # Database schema
+├── tests/                   # Test files
+└── public/                  # Static assets
+```
 
 ## Milestones
-- M1: שלד עובד – `/api/accounts` + `/accounts`
-- M2: לוגיקת חישוב + Vitest
-- M3: "עדכן נתונים" – משיכת מחירים/שערים בלחיצה
-- Phase B: מעבר ל-Supabase/Neon
+
+### M1: API בסיסי + עמודים
+- [ ] `/api/accounts` - API לניהול חשבונות
+- [ ] `/accounts` - עמוד תצוגת חשבונות
+- [ ] מודל נתונים בסיסי ב-Prisma
+
+### M2: לוגיקות חישוב + טסטים
+- [ ] חישוב ביצועים לכל תיק
+- [ ] חישוב עמלות ומכירות חלקיות
+- [ ] המרות מטבע
+- [ ] כיסוי טסטים מלא
+
+### M3: עדכון נתונים
+- [ ] אינטגרציה עם APIs של הברוקרים
+- [ ] עדכון אוטומטי של מחירים
+- [ ] דאשבורד זמן אמת
+
+## איך להריץ
+
+### התקנה
+```bash
+npm install
+```
+
+### פיתוח
+```bash
+npm run dev
+```
+האפליקציה תהיה זמינה ב-http://localhost:3000
+
+### טסטים
+```bash
+npm run test
+```
+
+### בנייה לפרודקשן
+```bash
+npm run build
+npm run start
+```
+
+## סביבת פיתוח
+
+יש לוודא שקיים קובץ `.env` עם:
+```
+DATABASE_URL="file:./dev.db"
+```
