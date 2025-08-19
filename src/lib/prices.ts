@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { env } from './env'
 
 // TwelveData API response interfaces
 interface TwelveDataQuote {
@@ -83,7 +84,7 @@ export async function getQuote(symbol: string): Promise<QuoteResult> {
     return cached
   }
 
-  const apiKey = process.env.TWELVEDATA_KEY
+  const apiKey = env.TWELVEDATA_KEY
   
   if (!apiKey) {
     console.warn('⚠️  [TwelveData] TWELVEDATA_KEY not found, using fallback')
@@ -148,11 +149,11 @@ export async function getUsdIls(): Promise<number> {
     return cached
   }
 
-  const apiKey = process.env.TWELVEDATA_KEY
+  const apiKey = env.TWELVEDATA_KEY
   
   if (!apiKey) {
     console.warn('⚠️  [TwelveData] TWELVEDATA_KEY not found, using FX_NOW fallback')
-    const fallback = parseFloat(process.env.FX_NOW || '3.70')
+    const fallback = parseFloat(env.FX_NOW)
     console.log(`📊 [TwelveData] Using FX_NOW fallback: ${fallback}`)
     return fallback
   }
@@ -191,7 +192,7 @@ export async function getUsdIls(): Promise<number> {
     console.error(`❌ [TwelveData] Failed to fetch USD/ILS rate:`, error)
     
     // Fallback to FX_NOW environment variable
-    const fallback = parseFloat(process.env.FX_NOW || '3.70')
+    const fallback = parseFloat(env.FX_NOW)
     console.log(`📊 [TwelveData] Using FX_NOW fallback: ${fallback}`)
     return fallback
   }

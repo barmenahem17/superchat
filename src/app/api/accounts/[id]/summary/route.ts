@@ -4,6 +4,7 @@ import { calcPnlForInstrument } from '@/domain/calc'
 import { calcFxImpactIls } from '@/domain/fx'
 import { getCurrentPriceUSD } from '@/lib/currentPrices'
 import { getUsdIls } from '@/lib/prices'
+import { env } from '@/lib/env'
 import type { TradeLike, FxConversionLike } from '@/domain/types'
 
 const prisma = new PrismaClient()

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@/generated/prisma'
-import { fetchAlphaVantageGlobalQuote, getDemoPrice } from '@/lib/prices'
+import { getQuote } from '@/lib/prices'
+import { getCryptoPrice, getCoinGeckoId } from '@/lib/marketData'
 import { Decimal } from '@prisma/client/runtime/library'
 
 const prisma = new PrismaClient()
@@ -40,15 +41,45 @@ export async function POST(request: Request) {
       let price: number
       let source: string
 
-      // Try to fetch from Alpha Vantage
-      const alphaPrice = await fetchAlphaVantageGlobalQuote(symbol)
+      console.log(`🔄 [Refresh] Processing ${symbol}...`)
+
+      // Check if it's crypto
+      const coinId = getCoinGeckoId(symbol)
       
-      if (alphaPrice !== null) {
-        price = alphaPrice
-        source = 'alpha'
+      if (coinId) {
+        // Crypto price via CoinGecko
+        try {
+          const cryptoPrice = await getCryptoPrice(coinId)
+          if (cryptoPrice !== null) {
+            price = cryptoPrice
+            source = 'coingecko'
+            console.log(`✅ [Refresh] Got crypto price for ${symbol}: $${price}`)
+          } else {
+            throw new Error('CoinGecko returned null')
+          }
+        } catch (error) {
+          console.log(`❌ [Refresh] Crypto price failed for ${symbol}, using demo`)
+          price = symbol === 'BTC' ? 65000 : 100
+          source = 'demo'
+        }
       } else {
-        price = getDemoPrice(symbol)
-        source = 'demo'
+        // Stock price via TwelveData
+        try {
+          const quote = await getQuote(symbol)
+          price = quote.price
+          source = 'twelve'
+          console.log(`✅ [Refresh] Got stock price for ${symbol}: $${price}`)
+        } catch (error) {
+          console.log(`❌ [Refresh] TwelveData failed for ${symbol}, using demo:`, (error as Error).message)
+          // Demo prices
+          const demoPrices: Record<string, number> = { 
+            AAPL: 165, 
+            MSFT: 320, 
+            BTC: 65000 
+          }
+          price = demoPrices[symbol] ?? 100
+          source = 'demo'
+        }
       }
 
       // Store price snapshot
