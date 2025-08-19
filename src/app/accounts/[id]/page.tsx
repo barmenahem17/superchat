@@ -49,10 +49,73 @@ async function getAccountSummary(id: string): Promise<AccountSummary | null> {
   }
 }
 
+async function getLastPriceUpdate(accountId: string): Promise<string | null> {
+  const { PrismaClient } = await import('@/generated/prisma')
+  const prisma = new PrismaClient()
+  
+  try {
+    const latestSnapshot = await prisma.priceSnapshot.findFirst({
+      where: { accountId },
+      orderBy: { createdAt: 'desc' }
+    })
+    
+    if (!latestSnapshot) {
+      return null
+    }
+    
+    return latestSnapshot.createdAt.toLocaleString('he-IL', {
+      year: 'numeric',
+      month: '2-digit', 
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch (error) {
+    console.error('Error fetching last price update:', error)
+    return null
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+async function getPriceSnapshots(accountId: string): Promise<Record<string, { price: number; source: string }>> {
+  const { PrismaClient } = await import('@/generated/prisma')
+  const prisma = new PrismaClient()
+  
+  try {
+    const snapshots = await prisma.priceSnapshot.findMany({
+      where: { accountId },
+      orderBy: { createdAt: 'desc' },
+      distinct: ['symbol'],
+      take: 10
+    })
+    
+    const result: Record<string, { price: number; source: string }> = {}
+    
+    for (const snapshot of snapshots) {
+      result[snapshot.symbol] = {
+        price: parseFloat(snapshot.priceUsd.toString()),
+        source: snapshot.source
+      }
+    }
+    
+    return result
+  } catch (error) {
+    console.error('Error fetching price snapshots:', error)
+    return {}
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
 
 
 export default async function AccountDetailPage({ params }: { params: { id: string } }) {
-  const summary = await getAccountSummary(params.id)
+  const [summary, lastUpdate, priceSnapshots] = await Promise.all([
+    getAccountSummary(params.id),
+    getLastPriceUpdate(params.id),
+    getPriceSnapshots(params.id)
+  ])
 
   if (!summary) {
     return (
@@ -79,10 +142,10 @@ export default async function AccountDetailPage({ params }: { params: { id: stri
             </Link>
             <h1 className="text-4xl font-bold mb-2">{summary.account.name}</h1>
             <p className="text-sm text-gray-500">
-              עודכן לאחרונה: —
+              עודכן לאחרונה: {lastUpdate || '—'}
             </p>
           </div>
-          <RefreshButton />
+          <RefreshButton accountId={params.id} />
         </div>
       </div>
 
@@ -165,27 +228,37 @@ export default async function AccountDetailPage({ params }: { params: { id: stri
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {summary.instruments.map((instrument) => (
-                  <tr key={instrument.symbol}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {instrument.symbol}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {instrument.qtyHeld.toFixed(6)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatUsd(instrument.currentPriceUSD)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatUsd(instrument.valueUSD)}
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                      instrument.totalUSD >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {formatUsd(instrument.totalUSD)}
-                    </td>
-                  </tr>
-                ))}
+                {summary.instruments.map((instrument) => {
+                  const snapshot = priceSnapshots[instrument.symbol]
+                  return (
+                    <tr key={instrument.symbol}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <div>
+                          <div>{instrument.symbol}</div>
+                          {snapshot && (
+                            <div className="text-xs text-gray-400 mt-1">
+                              מחיר אחרון: {formatUsd(snapshot.price)} (מקור: {snapshot.source === 'alpha' ? 'אלפא' : 'דמו'})
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {instrument.qtyHeld.toFixed(6)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatUsd(instrument.currentPriceUSD)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatUsd(instrument.valueUSD)}
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                        instrument.totalUSD >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {formatUsd(instrument.totalUSD)}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

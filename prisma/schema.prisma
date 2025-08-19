@@ -82,3 +82,12 @@ model FxConversion {
   fee          Decimal  @default(0)
   date         DateTime
 }
+
+model PriceSnapshot {
+  id        String   @id @default(cuid())
+  accountId String?
+  symbol    String
+  priceUsd  Decimal
+  source    String   // 'alpha' | 'demo'
+  createdAt DateTime @default(now())
+}

@@ -1,15 +1,39 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-export function RefreshButton() {
+interface RefreshButtonProps {
+  accountId: string
+}
+
+export function RefreshButton({ accountId }: RefreshButtonProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const router = useRouter()
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
-    // TODO: Implement actual refresh logic
-    console.log('Refreshing data...')
-    setTimeout(() => setIsRefreshing(false), 1000) // Simulate loading
+    
+    try {
+      const response = await fetch('/api/refresh-prices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ accountId }),
+      })
+
+      if (response.ok) {
+        // Refresh the page data
+        router.refresh()
+      } else {
+        console.error('Failed to refresh prices')
+      }
+    } catch (error) {
+      console.error('Error refreshing prices:', error)
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
   return (
