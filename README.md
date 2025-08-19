@@ -15,7 +15,7 @@ SuperChat הוא מנהל תיקי השקעות המנהל 3 תיקים עיקר
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **Database**: Prisma ORM + SQLite
 - **Testing**: Vitest + Testing Library
-- **Live Data**: Alpha Vantage (stocks) + CoinGecko (crypto) + ExchangeRate-API (FX)
+- **Live Data**: TwelveData (stocks + FX) + CoinGecko (crypto)
 - **Deployment**: Ready for Vercel/Netlify
 
 ## כללי חישוב מרכזיים
@@ -49,30 +49,31 @@ SuperChat הוא מנהל תיקי השקעות המנהל 3 תיקים עיקר
 האפליקציה משתמשת בשלושה מקורות מידע לקבלת מחירים עדכניים:
 
 ### מקורות נתונים
-- **מניות**: [Alpha Vantage API](https://www.alphavantage.co/) - מחירים בזמן אמת למניות אמריקאיות
+- **מניות**: [TwelveData API](https://twelvedata.com/) - מחירים בזמן אמת למניות אמריקאיות (800 קריאות חינמיות ביום)
 - **קריפטו**: [CoinGecko API](https://www.coingecko.com/api) - מחירי מטבעות דיגיטליים
-- **מטבעות**: [ExchangeRate-API](https://exchangerate.host/) - שערי חליפין USD/ILS
+- **מטבעות**: [TwelveData API](https://twelvedata.com/) - שערי חליפין USD/ILS
 
 ### דרישות סביבה
 ```bash
-ALPHA_VANTAGE_KEY=your_api_key_here  # נדרש למחירי מניות
+TWELVEDATA_KEY=your_api_key_here  # נדרש למחירי מניות ושער חליפין
+FX_NOW=3.70                      # פאלבק לשער USD/ILS אם ה-API לא זמין
 ```
 
 ### התנהגות
 - בלי מפתח API: האפליקציה תשתמש במחירים דמו עם סימון "(מחיר זמני)"
-- עם מפתח API: מחירים חיים מהמקורות החיצוניים
+- עם מפתח API: מחירים חיים מהמקורות החיצוניים + קאשינג של 60 שניות
 - כפתור "עדכן נתונים" טוען מחירים חדשים ומרענן את הדף
 
 ### בדיקת מחירים
 ```bash
 # בדיקת מחיר מניה
-curl "http://localhost:3000/api/price?symbol=MSFT"
-
-# בדיקת מחיר קריפטו  
-curl "http://localhost:3000/api/price?coin=bitcoin"
+curl "http://localhost:3000/api/quote?symbol=AAPL"
 
 # בדיקת שער חליפין
-curl "http://localhost:3000/api/price?fx=USDILS"
+curl "http://localhost:3000/api/quote?fx=USDILS"
+
+# בדיקת מחיר קריפטו (עדיין דרך CoinGecko)
+curl "http://localhost:3000/api/price?coin=bitcoin"
 ```
 
 ## מבנה תיקיות

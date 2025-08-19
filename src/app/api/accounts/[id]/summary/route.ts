@@ -3,7 +3,7 @@ import { PrismaClient } from '@/generated/prisma'
 import { calcPnlForInstrument } from '@/domain/calc'
 import { calcFxImpactIls } from '@/domain/fx'
 import { getCurrentPriceUSD } from '@/lib/currentPrices'
-import { getUsdIlsRate } from '@/lib/marketData'
+import { getUsdIls } from '@/lib/prices'
 import type { TradeLike, FxConversionLike } from '@/domain/types'
 
 const prisma = new PrismaClient()
@@ -34,7 +34,7 @@ export async function GET(
     }
 
     // Try to get live FX rate, fallback to env var
-    const liveFxRate = await getUsdIlsRate()
+    const liveFxRate = await getUsdIls()
     const fxNow = liveFxRate ?? parseFloat(process.env.FX_NOW || '3.70')
 
     // Calculate cash balances
